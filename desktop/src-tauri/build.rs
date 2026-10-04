@@ -52,6 +52,7 @@ fn stage_gateway_sidecar() {
         .current_dir(&gateway_dir)
         .env("CARGO_TARGET_DIR", &gateway_target_dir)
         .arg("build")
+        .arg("--locked")
         .arg("--release")
         .arg("--target")
         .arg(&target);
@@ -98,6 +99,8 @@ fn copy_executable(src: &Path, dst: &Path) {
 }
 
 fn main() {
+    let target = std::env::var("TARGET").expect("Desktop build must provide TARGET");
+    println!("cargo:rustc-env=CSSWITCH_BUILD_TARGET={target}");
     stage_gateway_sidecar();
     tauri_build::build()
 }

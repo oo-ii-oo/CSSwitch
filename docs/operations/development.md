@@ -4,7 +4,7 @@
 
 ## 环境
 
-- macOS Apple Silicon（当前桌面发布目标）；
+- macOS Apple Silicon（当前公开桌面发布目标），或 Intel Mac（本源码提供构建入口，尚未建立 Intel 真机验收证据）；
 - Node.js / npm（Tauri 前端与构建）；
 - Rust / Cargo（desktop backend 与 Rust gateway）；
 - Python 3（测试驱动与 mock 使用，**不是** CSSwitch runtime proxy 依赖）；
@@ -17,6 +17,53 @@ cd desktop
 npm install
 npm run tauri dev
 ```
+
+## Intel Mac 构建与启动
+
+Intel 构建使用原有 UI、Rust Desktop、Gateway、Provider、Codex 与 Skill 实现，
+只改变目标架构和打包入口。CSSwitch 不包含 Claude Science 本体，需先安装可在
+当前 Intel Mac 上运行的 Claude Science。Science 的上游系统要求与下载版本也必须满足。
+
+准备 macOS 13 或更高版本、Xcode Command Line Tools、Node.js 22 / npm、Rust stable
+（含 Cargo 和 rustup）。缺少工具时使用官方入口：
+[Node.js](https://nodejs.org/en/download)、[Rust](https://rustup.rs/)；Apple 命令行工具通过
+`xcode-select --install` 安装。构建需要网络下载依赖，不需要真实 API Key 或 Apple Developer 账号。
+
+在源码根目录双击 `Build-Intel.command`，或在终端执行：
+
+```bash
+bash scripts/build-macos-intel.sh
+```
+
+也可以从 `desktop` 执行 `npm run build:intel`。脚本自动安装锁定的 npm 依赖、添加
+`x86_64-apple-darwin` Rust target，并将构建缓存放到 `desktop/src-tauri/target/intel`。
+Desktop 与 Gateway 都从当前源码构建，嵌套 Gateway 构建也使用自己的 lockfile。
+开发模式优先使用本次构建 staged 的 Gateway；带 target 后缀的候选只接受与
+Desktop 编译目标完全一致的文件，保留无后缀打包及独立 Gateway 回退。
+Intel 配置只覆盖 macOS 最低系统版本（13.0）与 ad-hoc 签名，不改变产品名、
+bundle ID、配置格式或功能开关。原有 Apple Silicon 构建入口保持可用。
+
+成功输出为 `dist/intel/CSSwitch_<version>_x64.dmg`、对应的 `.sha256` 与
+`build-verification.json`。脚本先检查 `.app` 中主程序和 Gateway 均为 `x86_64`、
+版本与资源匹配，然后从空 staging 目录生成 DMG、只读挂载并复核一个正式 app 和
+指向 `/Applications` 的链接。只有复核成功的 DMG 才替换同名输出。
+ad-hoc 签名完整性不等于 Developer ID、公证或 Gatekeeper 放行；首次启动按 macOS
+「隐私与安全性」提供的允许打开流程操作。
+
+仅开发启动可执行：
+
+```bash
+cd desktop
+npm ci
+rustup target add x86_64-apple-darwin
+npm run dev:intel
+```
+
+Intel 打包可在 Intel Mac 上原生构建，也可在 Apple Silicon Mac 上交叉构建；
+交叉构建结果仍需在 Intel Mac 验证。Linux / Windows 不能通过该脚本生成 macOS 安装包。
+安装后在 CSSwitch 新增 DeepSeek 配置、设为当前，再点击「一键开始」。真实 Science 启动、
+模型推理、工具调用、Skill 和 Codex 等端到端行为必须在 Intel Mac 上另行验证；构建成功
+不证明所有运行时能力已经验收。
 
 ## 快速 WIP、候选与 source closure
 
@@ -56,14 +103,18 @@ node --check desktop/src/main.js
 组件命令和单个 `test/run-*.sh` 只适合聚焦诊断；当前完整门禁是上述
 `GATE-SOURCE`，不能由组件结果拼成 `SOURCE-GREEN`。
 
-## 远端协作与 CI 当前状态
+## 远端协作与手动 Intel 构建
 
-当前仓库没有 `.github/workflows/`，也没有已配置的 required check。PR 模板用于复核本地
-exact base / head、风险、变更面和实际执行的分层检查；它不把本地结果变成远端执行证据。
+本源码提供 `.github/workflows/build-macos-intel.yml`，仅通过 `workflow_dispatch`
+手动触发，使用 GitHub 的 `macos-15-intel` runner 与上述同一构建脚本。将本修改版放入
+自己的 GitHub 仓库后，可在 Actions 中选择 **Build Intel macOS app → Run workflow**，
+成功后下载 **CSSwitch-macos-intel** artifact。流程仅有 `contents: read` 权限，
+不发布 Release、不读取账号凭证，也不设置 required check。
 
-当前决定暂不采用 CI：尚无 macOS runner 耗时或稳定性的实际证据，也未获得启用 required
-check 的授权。在 workflow 和远端执行证据实际存在前，不能写成由 CI 兜底；source closure
-继续只在明确 closure 目标时使用现有本地 exact-candidate gate。
+该流程尚未在远端运行；其存在不代表 CI、Intel artifact 或 runtime 验收已经通过。
+runner 的当前架构标签以 [GitHub 官方文档](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)
+为准。source closure 仍只在明确 closure 目标时使用现有本地 exact-candidate gate；
+PR 模板中的本地结果不构成远端执行证据。
 
 ## Science 相邻功能工作法
 

@@ -60,7 +60,12 @@
 
 ## 安装与启动
 
-需要一台 Apple Silicon Mac、已安装的 [Claude Science](https://claude.com/download)，以及可用的第三方模型 API Key 或 Codex 账号。
+公开安装包面向 Apple Silicon Mac，需要已安装的 [Claude Science](https://claude.com/download)，以及可用的第三方模型 API Key 或 Codex 账号。
+
+**Intel Mac 源码构建：** 本修改版新增 `Build-Intel.command` 双击构建入口与
+`npm run build:intel`，生成 Intel `x86_64` DMG，沿用全部现有 UI 和业务实现。
+准备工具、开发启动和手动 GitHub Actions 步骤见[开发文档](./docs/operations/development.md#intel-mac-构建与启动)。
+当前尚未完成 Intel 安装包构建或真机端到端验证，不将源码支持等同于已发布 Intel 版本。
 
 ### 第一次安装
 

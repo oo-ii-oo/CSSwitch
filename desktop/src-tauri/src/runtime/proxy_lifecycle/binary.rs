@@ -7,20 +7,14 @@ fn find_gateway_in(dir: &Path) -> Option<PathBuf> {
     if exact.is_file() {
         return Some(exact);
     }
-    let entries = std::fs::read_dir(dir).ok()?;
-    for entry in entries.flatten() {
-        let path = entry.path();
-        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-        let matches = if cfg!(windows) {
-            name.starts_with("csswitch-gateway-") && name.ends_with(".exe")
-        } else {
-            name.starts_with("csswitch-gateway-")
-        };
-        if matches && path.is_file() {
-            return Some(path);
-        }
-    }
-    None
+    // Tauri's staged sidecar must match this Desktop build, even when binaries
+    // from several architectures coexist in a developer's checkout.
+    let suffixed = dir.join(format!(
+        "csswitch-gateway-{}{}",
+        env!("CSSWITCH_BUILD_TARGET"),
+        if cfg!(windows) { ".exe" } else { "" }
+    ));
+    suffixed.is_file().then_some(suffixed)
 }
 
 pub(crate) fn gateway_bin_path<R: Runtime>(app: &tauri::AppHandle<R>) -> Option<PathBuf> {
@@ -67,9 +61,9 @@ pub(crate) fn gateway_bin_path_from(
     }
     if let Some(root) = repo_root {
         for dir in [
+            root.join("desktop/src-tauri/binaries"),
             root.join("desktop/gateway/target/release"),
             root.join("desktop/gateway/target/debug"),
-            root.join("desktop/src-tauri/binaries"),
         ] {
             if let Some(path) = find_gateway_in(&dir) {
                 return Some(path);

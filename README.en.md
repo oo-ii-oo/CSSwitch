@@ -31,6 +31,12 @@
 
 You need an Apple Silicon Mac, [Claude Science](https://claude.com/download), and either a third-party model API key or a Codex account.
 
+**Intel Mac source build:** this modified source adds `Build-Intel.command` and
+`npm run build:intel` to package an `x86_64` DMG using the existing UI and business
+implementation. See [development instructions](./docs/operations/development.md#intel-mac-构建与启动)
+for prerequisites and the manual GitHub Actions build. An Intel artifact and
+end-to-end runtime acceptance have not yet been established.
+
 1. Download [`CSSwitch_0.8.4_aarch64.dmg`](https://github.com/SuperJJ007/CSSwitch/releases/download/v0.8.4/CSSwitch_0.8.4_aarch64.dmg) and drag CSSwitch into Applications. Optionally verify the public attachment SHA-256 against the [v0.8.4 release evidence](./docs/evidence/releases/v0.8.4.md).
 2. Create a profile and enter the API key, model names, and `base_url` when required.
 3. Choose **Set active**, then **Start**.

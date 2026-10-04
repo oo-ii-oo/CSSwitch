@@ -6,6 +6,12 @@
 
 Desktop build 会构建并打包同变体 Rust Gateway sidecar。当前生产运行没有 Python proxy fallback；旧 Python listener 清理只是 lifecycle 兼容路径。
 
+`build.rs` 将 Cargo `TARGET` 固定为 Desktop 编译期的 `CSSWITCH_BUILD_TARGET`，
+嵌套 Gateway 使用相同 target、变体及自身锁文件。`proxy_lifecycle/binary.rs` 先查找
+打包后的无后缀 binary；带 Tauri target 后缀的候选只接受与该编译目标完全一致的文件，
+不遍历并任选其他架构产物。仓库回退优先查找本次 Desktop staged 的 sidecar，
+再查找独立 Gateway 的 release/debug 目录；显式覆盖仍沿用原有文件安全校验。
+
 同一个 `csswitch-gateway` binary 有四个入口：
 
 | 入口 | 触发 | 职责 |

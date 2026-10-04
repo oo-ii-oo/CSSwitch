@@ -2469,14 +2469,21 @@ fn skill_bridge_token_rotates_with_gateway_launch_identity() {
 fn find_gateway_in_accepts_plain_or_tauri_suffixed_binary() {
     let dir = temp_dir("find-test");
     fs::create_dir_all(&dir).unwrap();
-    let name = if cfg!(windows) {
-        "csswitch-gateway-aarch64-pc-windows-msvc.exe"
-    } else {
-        "csswitch-gateway-aarch64-apple-darwin"
-    };
-    let path = dir.join(name);
+    let wrong = dir.join("csswitch-gateway-other-target");
+    fs::write(&wrong, b"wrong target").unwrap();
+    assert_eq!(find_gateway_in(&dir), None);
+    let path = dir.join(sidecar_name());
     fs::write(&path, b"bin").unwrap();
     assert_eq!(find_gateway_in(&dir), Some(path.clone()));
+    let plain = dir.join(if cfg!(windows) {
+        "csswitch-gateway.exe"
+    } else {
+        "csswitch-gateway"
+    });
+    fs::write(&plain, b"bundled").unwrap();
+    assert_eq!(find_gateway_in(&dir), Some(plain.clone()));
+    let _ = fs::remove_file(plain);
+    let _ = fs::remove_file(wrong);
     let _ = fs::remove_file(path);
     let _ = fs::remove_dir(dir);
 }
@@ -2492,12 +2499,12 @@ fn temp_dir(label: &str) -> std::path::PathBuf {
     ))
 }
 
-fn sidecar_name() -> &'static str {
-    if cfg!(windows) {
-        "csswitch-gateway-aarch64-pc-windows-msvc.exe"
-    } else {
-        "csswitch-gateway-aarch64-apple-darwin"
-    }
+fn sidecar_name() -> String {
+    format!(
+        "csswitch-gateway-{}{}",
+        env!("CSSWITCH_BUILD_TARGET"),
+        if cfg!(windows) { ".exe" } else { "" }
+    )
 }
 
 fn write_marker(path: &std::path::Path) {
@@ -2605,6 +2612,7 @@ fn gateway_lookup_finds_dev_repo_and_staged_sidecar_layouts() {
 
     let staged = root.join("desktop/src-tauri/binaries").join(sidecar_name());
     write_marker(&staged);
+    write_marker(&debug);
     assert_eq!(
         gateway_bin_path_from(None, None, None, Some(root.clone())),
         Some(staged.clone())

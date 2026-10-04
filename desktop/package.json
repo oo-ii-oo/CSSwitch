@@ -4,7 +4,9 @@
   "version": "0.8.4",
   "type": "module",
   "scripts": {
-    "tauri": "bash ../scripts/clean-bundle-resources.sh && tauri"
+    "tauri": "bash ../scripts/clean-bundle-resources.sh && tauri",
+    "dev:intel": "npm run tauri -- dev --target x86_64-apple-darwin --config src-tauri/tauri.intel.conf.json",
+    "build:intel": "bash ../scripts/build-macos-intel.sh"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2"
